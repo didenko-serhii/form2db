@@ -1,27 +1,49 @@
-'use client'
+// components/login-form.tsx
+"use client"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
-export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<"form">) {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+export function LoginForm({ user, onSuccess, className, ...props }) {
+  const [email, setEmail] = useState(user ? user.email : "")
+  const [password, setPassword] = useState(user ? user.password : "")
+
+  useEffect(() => {
+    if (user) {
+      setEmail(user.email)
+      setPassword(user.password)
+    } else {
+      setEmail("")
+      setPassword("")
+    }
+  }, [user])
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    await fetch("/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
-    })
+    if (user && user.id) {
+      await fetch(`/api/users/${user.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      })
+    } else {
+      await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      })
+    }
+    if (onSuccess) onSuccess()
   }
+
   return (
     <form className={cn("flex flex-col gap-6", className)} onSubmit={handleSubmit} {...props}>
       <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="text-2xl font-bold">Login to your account</h1>
+        <h1 className="text-2xl font-bold">{user ? "Update user" : "Login to your account"}</h1>
         <p className="text-balance text-sm text-muted-foreground">
-          Enter your email below to login to your account
+          {user ? "Update user details" : "Enter your email below to login to your account"}
         </p>
       </div>
       <div className="grid gap-6">
@@ -36,7 +58,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
           <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </div>
         <Button type="submit" className="w-full">
-          Login
+          {user ? "Update" : "Login"}
         </Button>
       </div>
     </form>
